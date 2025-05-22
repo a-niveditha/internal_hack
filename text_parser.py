@@ -7,7 +7,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-def extract_resume_sections(pdf_path):
+def extract_resume_sections():
 
     file_id = "64c3f2a4c1a3fabc12345678"  #replace with actual ID
     url = f"http://<backend-ip>:8000/pdf/{file_id}" #replace this too
@@ -87,7 +87,7 @@ def main_block():
         overall_summary+=summarised[key]
 
     score=calculate_similarity(summarised)*100
-    result={"Score":score,"Summary":overall_summary}
+    result={"Score":float(score),"Summary":overall_summary}
 
     return result 
 
