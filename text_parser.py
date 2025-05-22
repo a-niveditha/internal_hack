@@ -1,7 +1,10 @@
 import fitz  # Package Name-PyMuPDF
 
-import spacy
-import pytextrank
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
+
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 def extract_resume_sections(pdf_path):
 
@@ -38,17 +41,25 @@ def extract_resume_sections(pdf_path):
 
     return sections
 
-def find_summary(ext_data):
+def find_summary(text):
 
-    nlp = spacy.load("en_core_web_lg")
-    nlp.add_pipe("textrank")
-    print("original size=",len(ext_data))
-    doc = nlp(ext_data)
+    tokenizer = AutoTokenizer.from_pretrained("t5-small")
+    model = AutoModelForSeq2SeqLM.from_pretrained("t5-small")
+    
+    input_text="summarize:"+text
+    inputs = tokenizer(input_text, return_tensors="pt", max_length=512, truncation=True)
 
-    for sent in doc._.textrank.summary(limit_phrases=2, limit_sentences=2):
-        #sent- is a token object not raw string
-        print('Summary Length:',len(sent))
-        return str(sent)
+    summary_ids = model.generate(
+    inputs["input_ids"],
+    max_length=150,       # controls summary length
+    min_length=30,        # optional: minimum length for output
+    length_penalty=2.0,   # higher = shorter summary
+    num_beams=4,          # beam search for better quality
+    early_stopping=True   # stop when model is confident
+    )
+
+    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    return str(summary)
 
 resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume2.pdf")
 if resume_info==None:
@@ -56,21 +67,12 @@ if resume_info==None:
 
 summarised={}
 for key, value in resume_info.items():
-    #print(f"\n--- {key.upper()} ---\n{value}")
     summarised[key]=find_summary(value)
-
-for key,value in summarised.items():
-    print(key.upper(),"\n",value) 
-    
-
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+    print(key,"\n",summarised[key])
 
 model = SentenceTransformer("all-miniLM-L6-v2")
-
 query = model.encode("Seeking a Human Resources Director with experience in HRIS development, recruiting, FMLA, benefit administration, and policy development. Candidate must have worked in a healthcare environment and be skilled in web page development, OSHA compliance, employee handbooks, budget management, and strategic planning. Experience with database systems and managing full-cycle recruitment is essential. Master's degree in Information Management Systems is preferred.")
 
-#passage_embeddings = model.encode(str(sent))
 #similarity = model.similarity(query_embedding, passage_embeddings)
 similarity,j=0,0
 for i in summarised:
