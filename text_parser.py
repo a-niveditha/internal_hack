@@ -17,9 +17,7 @@ def extract_resume_sections(pdf_path):
         return None
 
     text_lower = text.lower()
-
     keywords=["education","projects","professional experience","technical skills","skills", "internships","work experience","experience","accomplishments"]
-
     lines = text_lower.splitlines()
     sections = {}
     current_key = None
@@ -61,22 +59,29 @@ def find_summary(text):
     summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
     return str(summary)
 
-resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume2.pdf")
+def calculate_similarity(summarised_data):
 
-if resume_info==None:
-    print("Could not fetch data")
+    model = SentenceTransformer("all-mpnet-base-v2")
+    query = model.encode("")
 
-summarised={}
-overall_summary=""
-for key, value in resume_info.items():
-    summarised[key]=find_summary(value)
-    overall_summary+=summarised[key]
+    similarity_values=[]
+    for i in summarised_data:
+        similarity_values.append(cosine_similarity([model.encode(summarised_data[i])],[query])[0][0] )
+        
+    return(max(similarity_values))
 
-model = SentenceTransformer("all-mpnet-base-v2")
-query = model.encode("Human Resources professional with over two decades of experience leading recruitment efforts, shaping HR policy, and driving organizational development. Skilled in managing complex HR systems, streamlining administrative workflows, and ensuring compliance with employment regulations such as OSHA, FMLA, and workers' compensation. Demonstrated success in reducing staffing costs, improving hiring efficiency, and implementing innovative HRIS and database solutions to support talent acquisition and retention. Experienced in both public and healthcare sectors, with a strong foundation in employee relations, benefits administration, and strategic planning. Recognized for initiating change management initiatives, developing training programs, and enhancing internal communications through digital tools and web platforms.")
+def main_block():
+    resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume2.pdf")
 
-similarity_values=[]
-for i in summarised:
-    similarity_values.append(cosine_similarity([model.encode(summarised[i])],[query])[0][0] )
-    
-print(max(similarity_values)) 
+    summarised={}
+    overall_summary=""
+    for key, value in resume_info.items():
+        summarised[key]=find_summary(value)
+        overall_summary+=summarised[key]
+    score=calculate_similarity(summarised)*100
+    result={"Score":score,"Summary":overall_summary}
+    return result 
+
+final_result=main_block() 
+
+
