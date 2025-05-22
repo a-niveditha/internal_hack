@@ -1,5 +1,8 @@
 import fitz  # Package Name-PyMuPDF
 
+import spacy
+import pytextrank
+
 def extract_resume_sections(pdf_path):
 
     doc = fitz.open(pdf_path)
@@ -12,7 +15,7 @@ def extract_resume_sections(pdf_path):
 
     text_lower = text.lower()
 
-    keywords=["education","projects","professional experience","technical skills","skills", "internships","work experience","experience"]
+    keywords=["education","projects","professional experience","technical skills","skills", "internships","work experience","experience","accomplishments"]
 
     lines = text_lower.splitlines()
     sections = {}
@@ -35,36 +38,43 @@ def extract_resume_sections(pdf_path):
 
     return sections
 
-final_data=""
-resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume.pdf")
+def find_summary(ext_data):
 
-for key, value in resume_info.items():
-    #print(f"\n--- {key.upper()} ---\n{value}")
-    final_data+=value
+    nlp = spacy.load("en_core_web_lg")
+    nlp.add_pipe("textrank")
+    print("original size=",len(ext_data))
+    doc = nlp(ext_data)
 
+    for sent in doc._.textrank.summary(limit_phrases=2, limit_sentences=2):
+        #sent- is a token object not raw string
+        print('Summary Length:',len(sent))
+        return str(sent)
+
+resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume2.pdf")
 if resume_info==None:
     print("Could not fetch data")
 
-#print(final_data)
+summarised={}
+for key, value in resume_info.items():
+    #print(f"\n--- {key.upper()} ---\n{value}")
+    summarised[key]=find_summary(value)
 
-import spacy
-import pytextrank
-
-nlp = spacy.load("en_core_web_lg")
-nlp.add_pipe("textrank")
-print("original size=",len(final_data))
-doc = nlp(final_data)
-
-for sent in doc._.textrank.summary(limit_phrases=2, limit_sentences=2):
-    #print(sent) #sent- is a token object not raw string
-    print('Summary Length:',len(sent)) 
+for key,value in summarised.items():
+    print(key.upper(),"\n",value) 
+    
 
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 model = SentenceTransformer("all-miniLM-L6-v2")
 
-query_embedding = model.encode("We are seeking a public health consultant with expertise in patient education, preventive medicine, and lifestyle intervention programs. The ideal candidate will have experience developing health promotion initiatives, managing grants, and collaborating with universities or healthcare institutions. Responsibilities include supporting physicians and medical residents, contributing to wellness program development, and providing strategic input on healthcare training, nutrition, and disease prevention. A background in family medicine education, community health, and corporate wellness is preferred")
-passage_embeddings = model.encode(str(sent))
+query = model.encode("Seeking a Human Resources Director with experience in HRIS development, recruiting, FMLA, benefit administration, and policy development. Candidate must have worked in a healthcare environment and be skilled in web page development, OSHA compliance, employee handbooks, budget management, and strategic planning. Experience with database systems and managing full-cycle recruitment is essential. Master's degree in Information Management Systems is preferred.")
 
-similarity = model.similarity(query_embedding, passage_embeddings)
-print("\n\n",similarity) 
+#passage_embeddings = model.encode(str(sent))
+#similarity = model.similarity(query_embedding, passage_embeddings)
+similarity,j=0,0
+for i in summarised:
+    similarity+=cosine_similarity([model.encode(summarised[i])],[query])[0][0]
+    print(i,similarity)
+
+print("\n\n",similarity/3) 
