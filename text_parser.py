@@ -62,21 +62,21 @@ def find_summary(text):
     return str(summary)
 
 resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume2.pdf")
+
 if resume_info==None:
     print("Could not fetch data")
 
 summarised={}
+overall_summary=""
 for key, value in resume_info.items():
     summarised[key]=find_summary(value)
-    print(key,"\n",summarised[key])
+    overall_summary+=summarised[key]
 
-model = SentenceTransformer("all-miniLM-L6-v2")
-query = model.encode("Seeking a Human Resources Director with experience in HRIS development, recruiting, FMLA, benefit administration, and policy development. Candidate must have worked in a healthcare environment and be skilled in web page development, OSHA compliance, employee handbooks, budget management, and strategic planning. Experience with database systems and managing full-cycle recruitment is essential. Master's degree in Information Management Systems is preferred.")
+model = SentenceTransformer("all-mpnet-base-v2")
+query = model.encode("Human Resources professional with over two decades of experience leading recruitment efforts, shaping HR policy, and driving organizational development. Skilled in managing complex HR systems, streamlining administrative workflows, and ensuring compliance with employment regulations such as OSHA, FMLA, and workers' compensation. Demonstrated success in reducing staffing costs, improving hiring efficiency, and implementing innovative HRIS and database solutions to support talent acquisition and retention. Experienced in both public and healthcare sectors, with a strong foundation in employee relations, benefits administration, and strategic planning. Recognized for initiating change management initiatives, developing training programs, and enhancing internal communications through digital tools and web platforms.")
 
-#similarity = model.similarity(query_embedding, passage_embeddings)
-similarity,j=0,0
+similarity_values=[]
 for i in summarised:
-    similarity+=cosine_similarity([model.encode(summarised[i])],[query])[0][0]
-    print(i,similarity)
-
-print("\n\n",similarity/3) 
+    similarity_values.append(cosine_similarity([model.encode(summarised[i])],[query])[0][0] )
+    
+print(max(similarity_values)) 
