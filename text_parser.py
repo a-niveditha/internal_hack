@@ -1,3 +1,4 @@
+import requests
 import fitz  # Package Name-PyMuPDF
 
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -8,7 +9,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def extract_resume_sections(pdf_path):
 
-    doc = fitz.open(pdf_path)
+    file_id = "64c3f2a4c1a3fabc12345678"  #replace with actual ID
+    url = f"http://<backend-ip>:8000/pdf/{file_id}" #replace this too
+    response = requests.get(url)
+    with open("temp.pdf", "wb") as f:
+        f.write(response.content)
+
+    doc = fitz.open("temp.pdf")
     text = ""
     for page in doc:
         text += page.get_text()
@@ -71,15 +78,17 @@ def calculate_similarity(summarised_data):
     return(max(similarity_values))
 
 def main_block():
-    resume_info = extract_resume_sections(r"D:\Codes\csi_25_internal_hackathon\trial_resume2.pdf")
+    resume_info = extract_resume_sections()
 
     summarised={}
     overall_summary=""
     for key, value in resume_info.items():
         summarised[key]=find_summary(value)
         overall_summary+=summarised[key]
+
     score=calculate_similarity(summarised)*100
     result={"Score":score,"Summary":overall_summary}
+
     return result 
 
 final_result=main_block() 
