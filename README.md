@@ -1,6 +1,6 @@
-# Recruitfy
+# Recruitify
 
-Recruitfy is an intelligent resume-to-job description matching tool.
+Recruitify is an intelligent resume-to-job description matching tool.
 It takes in job requirements provided by the recruiter, compares them with candidate resumes, and outputs a match score based on semantic similarity. This helps recruiters quickly filter out the most relevant candidates.
 
 ## ✨ Features
@@ -61,3 +61,4 @@ PyMuPDF → Resume parsing
 Groq API (Llama3-8B) → Summarization
 
 Sentence Transformers (HuggingFace) → Embeddings & similarity scoring
+
